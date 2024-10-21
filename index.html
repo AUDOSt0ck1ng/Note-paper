@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Note</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+    <div class="header">
+        <h1>便條紙應用</h1>
+        <div class="button-group">
+            <button id="addNoteBtn" title="添加便條紙"><i class="fas fa-plus"></i></button>
+            <button id="deleteEmptyNotesBtn" title="刪除空便條紙"><i class="fas fa-trash-alt"></i></button>
+            <button id="saveAllNotesBtn" title="保存便條紙到文件"><i class="fas fa-save"></i></button>
+            <button id="loadAllNotesBtn" title="從文件加載便條紙"><i class="fas fa-folder-open"></i></button>
+        </div>
+    </div>
+    <div id="workspace" class="workspace"></div>
+    <div id="assistantBtn" class="assistant-btn">
+        <img src="assistant-icon.png" alt="小助手">
+    </div>
+    <div id="chatWindow" class="chat-window hidden">
+        <div class="chat-header">
+            <img src="assistant-icon.png" alt="小助手" class="assistant-icon">
+            <h3>小助手</h3>
+            <button id="closeChatBtn">×</button>
+        </div>
+        <div id="chatMessages" class="chat-messages"></div>
+        <div class="chat-input">
+            <input type="text" id="userInput" placeholder="輸入訊息...">
+            <button id="sendMessageBtn">發送</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

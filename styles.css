@@ -1,0 +1,486 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100vh; /* 確保 body 佔滿整個視窗高度 */
+    overflow: hidden; /* 防止出現雙重滾動條 */
+    display: flex;
+    flex-direction: column;
+    background-color: #2c2c2c; /* 設置整體背景為深灰色 */
+    color: #e0e0e0; /* 設置默認文字顏色為淺灰色 */
+}
+
+.header {
+    position: fixed; /* 固定標題欄在頁面頂部 */
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000; /* 確保標題欄在最上層 */
+    background-color: #3a3a3a;
+    padding: 10px 20px; /* 減少上下內邊距 */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 50px; /* 設定固定高度 */
+}
+
+button {
+    padding: 10px;
+    border: none;
+    background-color: #4CAF50; /* 保持綠色按鈕 */
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 5px; /* 添加圓角 */
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+.workspace {
+    position: absolute;
+    top: 60px; /* 減小頂部間距 */
+    left: 0;
+    right: 0;
+    bottom: 20px; /* 部間距 */
+    overflow: auto;
+}
+
+.note {
+    padding: 30px 10px 10px 10px;
+    background-color: #3a3a3a;
+    border: 1px solid #4a4a4a;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+    width: 200px;
+    height: 200px;
+    position: absolute;
+    resize: both;
+    overflow: hidden;
+    cursor: move;
+    color: #e0e0e0;
+    border-radius: 15px;
+    min-width: 50px;
+    min-height: 50px;
+    max-width: 100vw;
+    max-height: calc(100vh - 100px);
+    user-select: none;
+}
+
+.note:hover {
+    box-shadow: 3px 3px 8px rgba(0,0,0,0.5);
+}
+
+/* 自定義滾動條樣式（適用於 WebKit 瀏覽器，如 Chrome、Safari） */
+.note::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.note::-webkit-scrollbar-track {
+    background: #2c2c2c;
+    border-radius: 10px;
+}
+
+.note::-webkit-scrollbar-thumb {
+    background: #4a4a4a;
+    border-radius: 10px;
+}
+
+.note::-webkit-scrollbar-thumb:hover {
+    background: #5a5a5a;
+}
+
+.delete-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 50%;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #3a3a3a; /* 深灰色 */
+    color: white; /* 按鈕文字顏色 */
+    border: none; /* 無邊框 */
+}
+
+.delete-btn:hover {
+    background-color: #6e0101b3; /* 懸停時稍微變亮 */
+}
+
+.color-picker {
+    display: flex;
+    gap: 5px;
+    position: absolute;
+    top: 5px;
+    left: 5px;
+}
+
+.color-option {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 1px solid #ccc;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+}
+
+textarea {
+    width: calc(100% - 10px);
+    height: calc(100% - 35px); /* 修改這行 */
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    outline: none;
+    resize: none;
+    padding: 5px;
+    margin-top: 5px; /* 添加這行 */
+    color: inherit;
+    user-select: text;
+    pointer-events: auto;
+}
+
+textarea::placeholder {
+    color: var(--placeholder-color);
+}
+
+/* 自定義文本區域滾動條樣式 */
+textarea::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+textarea::-webkit-scrollbar-track {
+    background: #2c2c2c;
+    border-radius: 10px;
+}
+
+textarea::-webkit-scrollbar-thumb {
+    background: #4a4a4a;
+    border-radius: 10px;
+}
+
+textarea::-webkit-scrollbar-thumb:hover {
+    background: #5a5a5a;
+}
+
+/* 添加調整大小的手柄樣式 */
+.note::after {
+    content: '';
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 10px;
+    height: 10px;
+    cursor: nwse-resize;
+    background: linear-gradient(135deg, transparent 50%, #4a4a4a 50%);
+    border-radius: 0 0 3px 0;
+}
+
+.no-select {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.note textarea::placeholder {
+    color: var(--placeholder-color, rgba(255, 255, 255, 0.6));
+    opacity: 1;
+}
+
+/* 為不同瀏覽器提供兼容性 */
+textarea::-webkit-input-placeholder { /* Chrome/Opera/Safari */
+    color: rgb(200, 200, 200);
+}
+textarea::-moz-placeholder { /* Firefox 19+ */
+    color: rgb(200, 200, 200);
+}
+textarea:-ms-input-placeholder { /* IE 10+ */
+    color: rgb(200, 200, 200);
+}
+textarea:-moz-placeholder { /* Firefox 18- */
+    color: rgb(200, 200, 200);
+}
+
+.assistant-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px; /* 原來是 90px，縮小到 2/3 */
+    height: 60px; /* 原來是 90px，縮小到 2/3 */
+    border-radius: 50%;
+    background-color: #4CAF50;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    cursor: pointer;
+    z-index: 1000;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.assistant-btn:hover {
+    transform: scale(1.1);
+}
+
+.assistant-btn img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 保留聊天窗口的樣式 */
+.chat-window {
+    position: fixed;
+    bottom: 80px; /* 調整這個值，讓聊天窗口不要擋住太多工作區域 */
+    right: 20px;
+    width: 300px;
+    height: 400px;
+    background-color: #3a3a3a;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.chat-window.hidden {
+    display: none;
+}
+
+.chat-header {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background-color: #ebb400;
+    border-bottom: 1px solid #4a4a4a;
+}
+
+.assistant-icon {
+    width: 30px;
+    height: 30px;
+    margin-right: 10px;
+    border-radius: 50%;
+}
+
+.chat-header h3 {
+    margin: 0;
+    flex-grow: 1;
+    color: #ffffff;
+}
+
+#closeChatBtn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #ffffff;
+}
+
+.chat-messages {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+/* 聊天室滾動條樣式 */
+.chat-messages::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: #2c2c2c;
+    border-radius: 10px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: #4a4a4a;
+    border-radius: 10px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: #5a5a5a;
+}
+
+.chat-input {
+    display: flex;
+    padding: 10px;
+    background-color: #2c2c2c;
+}
+
+.chat-input input {
+    flex-grow: 1;
+    padding: 5px;
+    border: none;
+    border-radius: 3px;
+    background-color: #4a4a4a;
+    color: #ffffff;
+}
+
+.chat-input button {
+    margin-left: 5px;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+}
+
+/* 保留其他現有樣式 */
+
+.button-group {
+    display: flex;
+    gap: 10px;
+}
+
+.button-group button {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    color: white;
+    transition: background-color 0.3s ease;
+}
+
+#addNoteBtn {
+    background-color: #4CAF50; /* 綠色 */
+}
+
+#deleteEmptyNotesBtn {
+    background-color: #f44336; /* 紅色 */
+}
+
+#saveAllNotesBtn {
+    background-color: #2196F3; /* 藍色 */
+}
+
+#loadAllNotesBtn {
+    background-color: #FF9800; /* 橙色 */
+}
+
+.button-group button:hover {
+    opacity: 0.8;
+}
+
+/* 添加懸停效果 */
+.button-group button:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.note textarea {
+    height: calc(100% - 30px); /* 調整文本區域的高度 */
+    margin-top: 5px; /* 為文本區域添加一些頂部邊距 */
+}
+
+.delete-btn, .color-btn {
+    top: 5px; /* 調整按鈕的位置 */
+}
+
+.note::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    background-color: rgba(0, 0, 0, 0.1);
+    cursor: move;
+}
+
+.delete-btn, .color-btn {
+    position: absolute;
+    top: 5px;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 16px;
+    color: inherit;
+}
+
+.delete-btn {
+    right: 5px;
+}
+
+.color-btn {
+    right: 30px;
+}
+
+.note {
+    user-select: none;
+    cursor: move;
+}
+
+.note textarea {
+    user-select: text;
+    cursor: text;
+    pointer-events: auto;
+}
+
+.no-select {
+    user-select: none;
+}
+
+.note .delete-btn,
+.note .color-picker {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.note::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    cursor: nwse-resize;
+}
+
+.message {
+    position: relative; /* 使子元素可以絕對定位 */
+}
+
+.copy-btn {
+    position: absolute; /* 絕對定位 */
+    top: 5px; /* 距離上方的距離 */
+    right: 5px; /* 距離右側的距離 */
+    
+    background-color: rgba(235, 180, 0, 0.5); /* 使用 rgba 設置透明背景 */
+    color: white; /* 按鈕文字顏色 */
+    border: none; /* 無邊框 */
+    border-radius: 5px; /* 圓角 */
+    cursor: pointer; /* 鼠標指針 */
+    padding: 3px 6px; /* 調整內邊距以減小按鈕大小 */
+    font-size: 12px; /* 調整字體大小 */
+    line-height: 1; /* 調整行高 */
+    transition: background-color 0.3s; /* 添加過渡效果 */
+}
+
+.copy-btn:hover {
+    background-color: rgba(235, 180, 0, 1); /* 懸停時改變為不透明 */
+}
+
