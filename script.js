@@ -137,7 +137,7 @@ function addNote() {
     // 設置初始顏色為深灰色
     updateNoteColor(note, colors.darkGray);
 
-    // 讓便條紙可以被拖曳
+    // 讓��條紙可以被拖曳
     makeNoteDraggable(note);
 
     // 將新添加的便條紙置於頂層
@@ -205,7 +205,12 @@ async function sendMessage() {
                         'Content-Type': 'application/json',
                     },
                     
-                    body: JSON.stringify({ message: userPrompt }),
+                    body: JSON.stringify({ 
+                        messages: [
+                            {role: "system", content: "你是一個文件整理助手。"},
+                            {role: "user", content: `請為以下內容生成摘要：\n\n${userPrompt}`}
+                        ]
+                    }),
                 });
                 
                 if (!response.ok) {
@@ -216,7 +221,7 @@ async function sendMessage() {
                 addMessage('assistant', data.reply);
             } catch (error) {
                 console.error('與 API 通信時出錯:', error);
-                addMessage('assistant', '抱歉，我現在無法回應。請稍後再試。');
+                addMessage('assistant', '抱歉我現在無法回應。請稍後再試。');
             }
         }
     }
@@ -260,7 +265,7 @@ function addMessage(sender, text) {
     
     // 創建可複製的元素
     const textElement = document.createElement('pre');
-    textElement.textContent = text; // 將文本設置為可複製的內容
+    textElement.textContent = text; // 將本設置為可複製的內容
     messageElement.appendChild(textElement);
     
     // 添加複製按鈕
@@ -381,23 +386,85 @@ function deleteEmptyNotes() {
     alert(`已刪除 ${deletedCount} 個空便條紙。`);
 }
 
-// 存所有便條紙到本地文件
-async function saveAllNotes() {
-    try {
-        // 顯示正在保存的指示
-        const savingIndicator = document.createElement('div');
-        savingIndicator.textContent = '正在保存...';
-        savingIndicator.style.position = 'fixed';
-        savingIndicator.style.top = '50%';
-        savingIndicator.style.left = '50%';
-        savingIndicator.style.transform = 'translate(-50%, -50%)';
-        savingIndicator.style.padding = '10px';
-        savingIndicator.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-        savingIndicator.style.color = 'white';
-        savingIndicator.style.borderRadius = '5px';
-        savingIndicator.style.zIndex = '9999';
-        document.body.appendChild(savingIndicator);
+// 新增全局變量來追踪當前開啟的檔案
+let currentFile = null; // 這個變數將儲存當前開啟的檔案路徑
 
+function showAlert(message) {
+    const alertBox = document.createElement('div');
+    alertBox.textContent = message;
+    alertBox.style.position = 'fixed';
+    alertBox.style.top = '20px';
+    alertBox.style.left = '50%';
+    alertBox.style.transform = 'translateX(-50%)';
+    alertBox.style.padding = '10px';
+    alertBox.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    alertBox.style.color = 'white';
+    alertBox.style.borderRadius = '5px';
+    alertBox.style.zIndex = '9999';
+    document.body.appendChild(alertBox);
+
+    // 設定3秒後自動隱藏
+    setTimeout(() => {
+        document.body.removeChild(alertBox);
+    }, 3000);
+}
+
+async function loadAllNotes() {
+    const [fileHandle] = await window.showOpenFilePicker({
+        types: [{
+            description: 'JSON File',
+            accept: {'application/json': ['.json']},
+        }],
+    });
+
+    currentFile = fileHandle; // 儲存當前檔案路徑
+
+    const file = await currentFile.getFile(); // 獲取檔案對象
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        try {
+            const notes = JSON.parse(e.target.result);
+            console.log('Parsed notes:', notes); // 添加日誌
+            workspace.innerHTML = ''; // 清空現有的便條紙
+            notes.forEach((noteData, index) => {
+                console.log(`Creating note ${index + 1}:`, noteData); // 添加日誌
+                try {
+                    createNoteFromData(noteData);
+                } catch (error) {
+                    console.error(`Error creating note ${index + 1}:`, error); // 添加錯誤日誌
+                }
+            });
+            hasUnsavedChanges = false; // 重置未保存更改標誌
+        } catch (error) {
+            console.error('解析文件時出錯:', error);
+            showAlert('載入便條紙時出錯。請確保選擇了正確的文件。');
+        }
+    };
+
+    reader.onerror = function() {
+        console.error('讀取文件時出錯');
+        showAlert('讀取文件時出錯。請稍再試。');
+    };
+
+    reader.readAsText(file);
+}
+
+async function saveAllNotes() {
+    const savingIndicator = document.createElement('div');
+    savingIndicator.textContent = '正在保存...';
+    savingIndicator.style.position = 'fixed';
+    savingIndicator.style.top = '50%';
+    savingIndicator.style.left = '50%';
+    savingIndicator.style.transform = 'translate(-50%, -50%)';
+    savingIndicator.style.padding = '10px';
+    savingIndicator.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    savingIndicator.style.color = 'white';
+    savingIndicator.style.borderRadius = '5px';
+    savingIndicator.style.zIndex = '9999';
+    document.body.appendChild(savingIndicator);
+
+    try {
         const notes = Array.from(document.querySelectorAll('.note')).map(note => ({
             content: note.querySelector('textarea').value,
             left: note.style.left,
@@ -406,88 +473,48 @@ async function saveAllNotes() {
             height: note.style.height,
             zIndex: note.style.zIndex,
             backgroundColor: note.style.backgroundColor,
-            textColor: note.querySelector('textarea').style.color // 新增：保存文字顏色
+            textColor: note.querySelector('textarea').style.color
         }));
 
         const blob = new Blob([JSON.stringify(notes, null, 2)], {type: 'application/json'});
 
-        // 使用 showSaveFilePicker API
-        if ('showSaveFilePicker' in window) {
-            const handle = await window.showSaveFilePicker({
-                suggestedName: 'my_notes.json',
-                types: [{
-                    description: 'JSON File',
-                    accept: {'application/json': ['.json']},
-                }],
-            });
-            const writable = await handle.createWritable();
+        if (currentFile) {
+            const writable = await currentFile.createWritable();
             await writable.write(blob);
             await writable.close();
         } else {
-            // 回退到舊方法
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'my_notes.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            if ('showSaveFilePicker' in window) {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: 'my_notes.json',
+                    types: [{
+                        description: 'JSON File',
+                        accept: {'application/json': ['.json']},
+                    }],
+                });
+                currentFile = handle;
+                const writable = await handle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+            } else {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'my_notes.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
         }
 
         hasUnsavedChanges = false;
-
-        // 移除保存指示器並顯示成功消息
-        document.body.removeChild(savingIndicator);
-        alert('便條紙已成功保存！');
+        showAlert('便條紙已成功保存！');
     } catch (error) {
         console.error('保存便條紙時出錯:', error);
-        alert('保存便條紙時出錯。請稍後再試。');
+        showAlert('保存便條紙時出錯。請稍後再試。');
+    } finally {
+        document.body.removeChild(savingIndicator);
     }
-}
-
-function loadAllNotes() {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = '.json';
-
-    fileInput.onchange = function(e) {
-        const file = e.target.files[0];
-        if (!file) {
-            return; // 用戶沒有選擇文件，直接返回
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const notes = JSON.parse(e.target.result);
-                console.log('Parsed notes:', notes); // 添加日誌
-                workspace.innerHTML = ''; // 清空現有的便條紙
-                notes.forEach((noteData, index) => {
-                    console.log(`Creating note ${index + 1}:`, noteData); // 添加日誌
-                    try {
-                        createNoteFromData(noteData);
-                    } catch (error) {
-                        console.error(`Error creating note ${index + 1}:`, error); // 添加錯誤日誌
-                    }
-                });
-                alert('便條紙已成功載入！');
-                hasUnsavedChanges = false; // 重置未保存更改標誌
-            } catch (error) {
-                console.error('解析文件時出錯:', error);
-                alert('載入便條紙時出錯。請確保選擇了正確的文件。');
-            }
-        };
-
-        reader.onerror = function() {
-            console.error('讀取文件時出錯');
-            alert('讀取文件時出錯。請稍再試。');
-        };
-
-        reader.readAsText(file);
-    };
-
-    fileInput.click();
 }
 
 // 添加一個新的事件監聽器來處理取消操作
@@ -557,7 +584,7 @@ setInterval(() => {
     }
 }, 15 * 60 * 1000); // 15 分
 
-// 離開頁面時提醒
+// 離開頁面提醒
 window.addEventListener('beforeunload', (event) => {
     if (hasUnsavedChanges) {
         event.preventDefault(); // 取消事件
