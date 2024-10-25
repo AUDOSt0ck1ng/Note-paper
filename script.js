@@ -130,18 +130,17 @@ function addNote() {
     note.appendChild(deleteBtn);
 
     const colorPicker = createColorPicker(note);
-
     note.appendChild(colorPicker);
     workspace.appendChild(note);
 
     // 設置初始顏色為深灰色
     updateNoteColor(note, colors.darkGray);
 
-    // 讓��條紙可以被拖曳
-    makeNoteDraggable(note);
+    // 設置 z-index 為當前時間戳
+    note.style.zIndex = Date.now();
 
-    // 將新添加的便條紙置於頂層
-    note.style.zIndex = getTopZIndex() + 1;
+    // 讓條紙可以被拖曳
+    makeNoteDraggable(note);
 }
 
 // 獲取當前最高的 z-index 值
@@ -152,9 +151,8 @@ function getTopZIndex() {
     ));
 }
 
-// 獲取聊天關素
+// 獲取聊天相關元素
 const chatWindow = document.getElementById('chatWindow');
-const closeChatBtn = document.getElementById('closeChatBtn');
 const userInput = document.getElementById('userInput');
 const sendMessageBtn = document.getElementById('sendMessageBtn');
 const chatMessages = document.getElementById('chatMessages');
@@ -162,6 +160,11 @@ const chatMessages = document.getElementById('chatMessages');
 // 打開/關閉聊天窗口
 assistantBtn.addEventListener('click', () => {
     chatWindow.classList.toggle('hidden');
+    if (!chatWindow.classList.contains('hidden')) {
+        const currentZIndex = Date.now(); // 使用當前時間戳作為 z-index
+        chatWindow.style.zIndex = currentZIndex; // 設置聊天窗口的 z-index
+        console.log('Chat window z-index:', currentZIndex); // 添加日誌
+    }
 });
 
 closeChatBtn.addEventListener('click', () => {
@@ -179,7 +182,8 @@ userInput.addEventListener('keypress', async (e) => {
 async function sendMessage() {
     const message = userInput.value.trim();
     if (message) {
-        chat_with_llm = true;
+        console.log('Sending message:', message); // 新添加的日誌
+        chat_with_llm = ['',true];
         userInput.value = '';
         // 處理命令
         if (message.startsWith('/')) {
@@ -199,6 +203,7 @@ async function sendMessage() {
             }
 
             try {
+                console.log('Sending user prompt:', userPrompt); // 新添加的日誌
                 const response = await fetch('http://localhost:3000/api/chat', {
                     method: 'POST',
                     headers: {
@@ -218,6 +223,7 @@ async function sendMessage() {
                 }
                 
                 const data = await response.json();
+                console.log('Received response:', data); // 新添加的日誌
                 addMessage('assistant', data.reply);
             } catch (error) {
                 console.error('與 API 通信時出錯:', error);
@@ -260,17 +266,18 @@ function handleCommand(message) {
 }
 
 function addMessage(sender, text) {
+    console.log('addMessage called with:', sender, text); // 新添加的日誌
+
     const messageElement = document.createElement('div');
     messageElement.classList.add('message', sender);
     
-    // 創建可複製的元素
     const textElement = document.createElement('pre');
-    textElement.textContent = text; // 將本設置為可複製的內容
-    messageElement.appendChild(textElement);
+    textElement.textContent = text;
+    // messageElement.appendChild(textElement);
     
     // 添加複製按鈕
     const copyBtn = document.createElement('button');
-    copyBtn.textContent = '複製';
+    copyBtn.textContent = 'copy';
     copyBtn.className = 'copy-btn'; // 添加類名以便於 CSS
     copyBtn.addEventListener('click', () => {
         navigator.clipboard.writeText(text).then(() => {
@@ -282,9 +289,12 @@ function addMessage(sender, text) {
     
     // 將複製按鈕添加到消息元素的右上角
     messageElement.appendChild(copyBtn);
+    messageElement.appendChild(textElement);
     
     chatMessages.appendChild(messageElement);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    console.log('Message added to chat window:', messageElement); // 新添加的日誌
 }
 
 // 讓便條紙可以被拖曳
@@ -292,6 +302,7 @@ function makeNoteDraggable(note) {
     let isDragging = false;
     let isResizing = false;
     let startX, startY, startLeft, startTop;
+    const originalZIndex = 1; // 儲存原始 z-index
 
     note.addEventListener('mousedown', (e) => {
         const rect = note.getBoundingClientRect();
@@ -305,8 +316,10 @@ function makeNoteDraggable(note) {
             startY = e.clientY;
             startLeft = note.offsetLeft;
             startTop = note.offsetTop;
-            note.style.zIndex = zIndex++;
-            
+
+            // 更新 z-index 為當前時間戳
+            note.style.zIndex = Date.now(); 
+
             // 防止文本選擇
             e.preventDefault();
             
@@ -323,7 +336,6 @@ function makeNoteDraggable(note) {
             // 防止文本選擇
             e.preventDefault();
         }
-        // 如果點擊在文本區域，不做任何特殊處理，允許正常的文本編輯
     });
 
     document.addEventListener('mousemove', (e) => {
@@ -354,6 +366,9 @@ function makeNoteDraggable(note) {
         isResizing = false;
         note.classList.remove('no-select');
         document.body.classList.remove('no-select');
+        
+        // 恢復原始 z-index
+        note.style.zIndex = originalZIndex;
     });
 }
 
@@ -428,7 +443,7 @@ async function loadAllNotes() {
             console.log('Parsed notes:', notes); // 添加日誌
             workspace.innerHTML = ''; // 清空現有的便條紙
             notes.forEach((noteData, index) => {
-                console.log(`Creating note ${index + 1}:`, noteData); // 添加日誌
+                console.log(`Creating note ${index + 1}:`, noteData);
                 try {
                     createNoteFromData(noteData);
                 } catch (error) {
@@ -646,5 +661,43 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // 其他初始化代碼...
+});
+
+function makeChatWindowResizable(chatWindow) {
+    const resizeHandle = chatWindow.querySelector('.resize-handle');
+    let isResizing = false;
+    let startX, startY, startWidth, startHeight;
+
+    resizeHandle.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        startWidth = chatWindow.offsetWidth;
+        startHeight = chatWindow.offsetHeight;
+
+        // 防止文本選擇
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (isResizing) {
+            const newWidth = startWidth + (startX - e.clientX); // 修正寬度計算
+            const newHeight = startHeight + (startY - e.clientY); // 修正高度計算
+            chatWindow.style.width = `${Math.max(200, newWidth)}px`; // 最小寬度
+            chatWindow.style.height = `${Math.max(200, newHeight)}px`; // 最小高度
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        isResizing = false;
+    });
+}
+
+// 確保 DOM 已經加載完成
+document.addEventListener('DOMContentLoaded', function() {
+    // 其他初始化代碼...
+
+    // 初始化調整大小功能
+    makeChatWindowResizable(chatWindow);
 });
 
